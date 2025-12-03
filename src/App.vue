@@ -80,7 +80,7 @@
 </template>
 
 <script>
-import ImageUploadArea from './components/ImageUploadArea.vue'
+import ImageUploadArea from './ImageUploadArea.vue' // Caminho corrigido
 import PagePreview from './components/PagePreview.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
 import { calculateLayout, calculateLayoutStats, validateImages } from './utils/layoutEngine.js'
