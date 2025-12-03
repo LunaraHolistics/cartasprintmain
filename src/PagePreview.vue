@@ -1,83 +1,79 @@
 <template>
   <div class="p-4 bg-gray-50 rounded-xl shadow-inner min-h-[300px]">
-
-    <!-- CONTROLES SUPERIORES -->
-    <div class="flex flex-wrap gap-4 items-center justify-between mb-4">
-
-      <div v-if="backPages.length > 0" class="flex space-x-2">
-        <button
-          @click="isFront = true; currentPageIndex = 0"
-          :class="[isFront ? 'bg-indigo-600 text-white' : 'bg-gray-300 text-gray-700']"
-          class="px-3 py-1 rounded transition"
-        >Frente</button>
-
-        <button
-          @click="isFront = false; currentPageIndex = 0"
-          :class="[isFront ? 'bg-gray-300 text-gray-700' : 'bg-indigo-600 text-white']"
-          class="px-3 py-1 rounded transition"
-        >Verso</button>
-      </div>
-
-      <div class="flex items-center gap-2">
-        <span class="text-sm">Zoom</span>
-        <input type="range" min="0.5" max="1.5" step="0.05" v-model="zoom" />
-        <span class="text-sm">{{ zoom.toFixed(2) }}x</span>
-      </div>
-
-      <label class="flex items-center gap-2 text-sm">
-        <input type="checkbox" v-model="showBleed" />
-        Mostrar Sangria
-      </label>
-
+    <div v-if="pages.length === 0" class="text-center text-gray-500 p-10">
+      <p>Nenhuma página de layout gerada.</p>
     </div>
 
-    <!-- PREVIEW -->
-    <div class="flex gap-4">
+    <div v-else class="space-y-4">
 
-      <!-- MINIATURAS -->
-      <div class="flex flex-col space-y-2 max-h-[80vh] overflow-y-auto">
-        <div
-          v-for="(p, i) in currentPages"
-          :key="i"
-          @click="currentPageIndex = i"
-          :class="[
-            'w-20 h-28 border cursor-pointer flex items-center justify-center text-xs',
-            currentPageIndex === i ? 'border-indigo-600' : 'border-gray-300'
-          ]"
-        >
-          {{ i + 1 }}
-        </div>
-      </div>
+      <div class="flex gap-4">
 
-      <!-- VISUALIZAÇÃO -->
-      <div class="flex-1 flex justify-center items-center overflow-hidden">
-
-        <div
-          class="page-preview relative bg-white border shadow-xl overflow-hidden"
-          :style="getPageStyle()"
-        >
-
-          <!-- SANGRIA -->
+        <div class="flex flex-col space-y-2 max-h-[70vh] overflow-y-auto pr-2 border-r border-gray-200">
           <div
-            v-if="showBleed"
-            class="absolute inset-0 border-2 border-red-500 pointer-events-none z-20"
-            :style="{ margin: bleedPx + 'px' }"
-          ></div>
-
-          <div
-            v-for="(card, cardIndex) in currentPage"
-            :key="cardIndex"
-            class="absolute overflow-hidden border border-dashed border-red-400"
-            :style="getCardStyle(card)"
+            v-for="(page, index) in pages"
+            v-bind:key="index"
+            v-on:click="selectPage(index)"
+            v-bind:class="thumbClass(index)"
           >
-            <img :src="card.src" class="w-full h-full object-cover" />
+            <span class="text-gray-800">Página</span>
+            <span v-text="pageNumbers[index]" class="text-lg"></span>
+          </div>
+        </div>
+
+        <div class="flex-1 flex flex-col gap-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-gray-700">Zoom</span>
+              <input
+                v-bind:type="'range'"
+                v-bind:min="0.5"
+                v-bind:max="2"
+                v-bind:step="0.05"
+                v-model.number="zoom"
+              />
+              <span class="text-sm font-semibold text-indigo-600" v-text="zoomLabel"></span>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input v-model="showBleed" v-bind:type="'checkbox'" />
+                <span>Mostrar Sangria (</span><span v-text="bleedMm"></span><span>mm)</span>
+              </label>
+            </div>
           </div>
 
+          <div class="flex-1 flex justify-center items-center overflow-auto max-h-[75vh]">
+            <div
+              class="relative bg-white border shadow-xl overflow-hidden"
+              v-bind:style="pageStyle"
+            >
+              <div class="absolute top-2 left-2 text-xs bg-black bg-opacity-50 text-white px-2 py-0.5 rounded z-30">
+                <span v-text="sideLabel"></span>
+                <span> </span>
+                <span v-text="displayPageNumber"></span>
+              </div>
+
+              <div
+                v-if="showBleed"
+                class="absolute inset-0 border-2 border-red-500 pointer-events-none z-20"
+                v-bind:style="bleedStyle"
+              ></div>
+
+              <div
+                v-for="(card, idx) in currentPage"
+                v-bind:key="cardKey(idx, card)"
+                class="absolute overflow-hidden border border-dashed border-red-400"
+                v-bind:style="getCardStyle(card)"
+              >
+                <img v-bind:src="card.src" class="w-full h-full object-cover" />
+              </div>
+
+            </div>
+          </div>
         </div>
+
       </div>
-
     </div>
-
   </div>
 </template>
 
@@ -88,65 +84,98 @@ function getPageDimensions(settings) {
     A3: { width: 297, height: 420 }
   }
 
-  if (settings.pageSize === 'custom') {
+  if (settings && settings.pageSize === 'custom') {
     return { width: settings.customWidth, height: settings.customHeight }
   }
 
-  return sizes[settings.pageSize] || sizes.A4
+  return sizes[(settings && settings.pageSize) || 'A4'] || sizes.A4
 }
 
 export default {
   name: 'PagePreview',
-
   props: {
-    frontPages: { type: Array, default: () => [] },
-    backPages: { type: Array, default: () => [] },
+    pages: { type: Array, required: true },
     settings: { type: Object, required: true }
   },
-
-  data() {
+  data: function () {
     return {
       currentPageIndex: 0,
-      isFront: true,
       mmToPx: 3.78,
       zoom: 1,
       showBleed: false,
       bleedMm: 3
     }
   },
-
   computed: {
-    currentPages() {
-      return this.isFront ? this.frontPages : this.backPages
+    currentPage: function () {
+      return this.pages[this.currentPageIndex] || []
     },
-
-    currentPage() {
-      return this.currentPages[this.currentPageIndex] || []
+    pageNumbers: function () {
+      var out = []
+      var i = 1
+      while (i <= this.pages.length) {
+        out.push(i)
+        i = i + 1
+      }
+      return out
     },
-
-    bleedPx() {
-      return this.bleedMm * this.mmToPx
-    }
-  },
-
-  methods: {
-    getPageDimensions,
-
-    getPageStyle() {
-      var dims = this.getPageDimensions(this.settings)
-
+    pageStyle: function () {
+      var dims = getPageDimensions(this.settings)
       return {
         width: dims.width * this.mmToPx * this.zoom + 'px',
         height: dims.height * this.mmToPx * this.zoom + 'px'
       }
     },
+    bleedPx: function () {
+      return this.bleedMm * this.mmToPx * this.zoom
+    },
+    bleedStyle: function () {
+      return { margin: this.bleedPx + 'px' }
+    },
+    zoomLabel: function () {
+      return Number(this.zoom).toFixed(2) + 'x'
+    },
+    displayPageNumber: function () {
+      // safety: if pageNumbers is empty, return 0
+      return this.pageNumbers[this.currentPageIndex] || 0
+    },
+    sideLabel: function () {
+      return 'Página'
+    }
+  },
+  methods: {
+    selectPage: function (i) {
+      this.currentPageIndex = i
+    },
+    thumbClass: function (i) {
+      var base = 'w-20 h-28 border cursor-pointer flex flex-col items-center justify-center text-xs p-1 shadow-sm transition'
+      if (this.currentPageIndex === i) {
+        return base + ' border-indigo-600 bg-indigo-50 font-bold'
+      }
+      return base + ' border-gray-300 bg-white hover:bg-gray-100'
+    },
+    cardKey: function (idx, card) {
+      // build a stable string key without using template strings in template
+      var s = 'card-'
+      if (card && card.src) {
+        s = s + (card.src).toString()
+      } else {
+        s = s + String(idx)
+      }
+      return s
+    },
+    getCardStyle: function (card) {
+      // guard defaults in case card fields missing
+      var x = (card && card.x) ? card.x : 0
+      var y = (card && card.y) ? card.y : 0
+      var w = (card && card.displayWidth) ? card.displayWidth : 10
+      var h = (card && card.displayHeight) ? card.displayHeight : 10
 
-    getCardStyle(card) {
       return {
-        left: (card.x * this.mmToPx * this.zoom) + 'px',
-        top: (card.y * this.mmToPx * this.zoom) + 'px',
-        width: (card.displayWidth * this.mmToPx * this.zoom) + 'px',
-        height: (card.displayHeight * this.mmToPx * this.zoom) + 'px'
+        left: x * this.mmToPx * this.zoom + 'px',
+        top: y * this.mmToPx * this.zoom + 'px',
+        width: w * this.mmToPx * this.zoom + 'px',
+        height: h * this.mmToPx * this.zoom + 'px'
       }
     }
   }
@@ -155,6 +184,7 @@ export default {
 
 <style scoped>
 .page-preview {
-  background: white;
+  max-width: 100%;
+  max-height: 100%;
 }
 </style>
