@@ -99,6 +99,8 @@ export default {
       backImage: null,
       pages: [],
       stats: null,
+      cardTargetWidth: 0, 
+      cardTargetHeight: 0,
       settings: {
         pageSize: 'A4',
         customWidth: 210,
