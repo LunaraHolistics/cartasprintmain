@@ -83,8 +83,8 @@
 import ImageUploadArea from './ImageUploadArea.vue'
 import PagePreview from './PagePreview.vue' // Assumindo que PagePreview.vue está em src/
 import SettingsPanel from './SettingsPanel.vue' // Assumindo que SettingsPanel.vue está em src/
-import { calculateLayout, calculateLayoutStats, validateImages } from '/layoutEngine.js'
-import { generatePDFFromPages, exportSettings as exportSettingsUtil } from '/pdfGenerator.js'
+import { calculateLayout, calculateLayoutStats, validateImages } from './layoutEngine.js'
+import { generatePDFFromPages, exportSettings as exportSettingsUtil } from './pdfGenerator.js'
 
 export default {
   name: 'App',
