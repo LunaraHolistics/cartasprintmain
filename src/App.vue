@@ -81,10 +81,10 @@
 
 <script>
 import ImageUploadArea from './ImageUploadArea.vue' // Caminho corrigido
-import PagePreview from './components/PagePreview.vue'
-import SettingsPanel from './components/SettingsPanel.vue'
-import { calculateLayout, calculateLayoutStats, validateImages } from './utils/layoutEngine.js'
-import { generatePDFFromPages, exportSettings as exportSettingsUtil } from './utils/pdfGenerator.js'
+import PagePreview from './PagePreview.vue'
+import SettingsPanel from './SettingsPanel.vue'
+import { calculateLayout, calculateLayoutStats, validateImages } from './layoutEngine.js'
+import { generatePDFFromPages, exportSettings as exportSettingsUtil } from './pdfGenerator.js'
 
 export default {
   name: 'App',
