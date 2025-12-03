@@ -1,5 +1,5 @@
 import { createApp } from 'vue'
-import App from './App.vue'
+import './main.css' // Importando o CSS aqui (padrão Vite)
+import App from './App.vue' // Agora o App está na mesma pasta
 
-const app = createApp(App)
-app.mount('#app')
+createApp(App).mount('#app')
