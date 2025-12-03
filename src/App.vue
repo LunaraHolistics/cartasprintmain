@@ -1,6 +1,5 @@
 <template>
   <div class="min-h-screen bg-gray-100">
-    <!-- Header -->
     <header class="bg-white shadow">
       <div class="max-w-7xl mx-auto px-4 py-6">
         <h1 class="text-3xl font-bold text-gray-900">Card Layout & Print Manager</h1>
@@ -8,10 +7,8 @@
       </div>
     </header>
 
-    <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 py-8">
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <!-- Sidebar - Configurações -->
         <div class="lg:col-span-1">
           <SettingsPanel 
             :settings="settings"
@@ -26,9 +23,7 @@
           />
         </div>
 
-        <!-- Main Preview Area -->
         <div class="lg:col-span-3">
-          <!-- Back Image Upload (if enabled) -->
           <div v-if="settings.includeBack" class="bg-white rounded-lg shadow p-6 mb-6">
             <h3 class="text-lg font-bold mb-4">Imagem do Verso</h3>
             <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
@@ -49,17 +44,14 @@
             </div>
           </div>
 
-          <!-- Image Upload Area -->
           <div v-if="images.length === 0" class="bg-white rounded-lg shadow p-6 mb-6">
             <ImageUploadArea @files-selected="handleImageUpload" />
           </div>
 
-          <!-- Preview -->
           <div v-if="images.length > 0">
             <PagePreview :pages="pages" :settings="settings" />
           </div>
 
-          <!-- Empty State -->
           <div v-else class="bg-white rounded-lg shadow p-12 text-center">
             <p class="text-gray-500 text-lg">Nenhuma imagem carregada. Comece enviando suas cartas.</p>
           </div>
@@ -67,12 +59,10 @@
       </div>
     </main>
 
-    <!-- Error Toast -->
     <div v-if="errorMessage" class="fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg animate-pulse">
       {{ errorMessage }}
     </div>
 
-    <!-- Success Toast -->
     <div v-if="successMessage" class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg animate-pulse">
       {{ successMessage }}
     </div>
@@ -99,8 +89,10 @@ export default {
       backImage: null,
       pages: [],
       stats: null,
+      // 🎯 CORREÇÃO 1: Adição das variáveis de tamanho alvo
       cardTargetWidth: 0, 
       cardTargetHeight: 0,
+      // ---------------------------------
       settings: {
         pageSize: 'A4',
         customWidth: 210,
@@ -133,17 +125,26 @@ export default {
       for (let file of files) {
         const reader = new FileReader()
         reader.onload = (e) => {
+          // Aumenta o array images
           this.images.push({
             src: e.target.result,
             width: 0,
             height: 0
           })
+          
           // Get image dimensions
           const img = new Image()
           img.onload = () => {
             const lastImage = this.images[this.images.length - 1]
             lastImage.width = img.naturalWidth
             lastImage.height = img.naturalHeight
+
+            // 🎯 CORREÇÃO 2: Define o tamanho-alvo (em pixels) na primeira imagem
+            if (this.images.length === 1) { 
+              this.cardTargetWidth = img.naturalWidth
+              this.cardTargetHeight = img.naturalHeight
+            }
+            
             this.calculateLayout()
           }
           img.onerror = () => {
@@ -178,8 +179,13 @@ export default {
         return
       }
 
-      // Calcular layout
-      this.pages = calculateLayout(this.images, this.settings)
+      // 🎯 CORREÇÃO 3: Passar o tamanho alvo para o motor de layout
+      this.pages = calculateLayout(
+        this.images, 
+        this.settings, 
+        this.cardTargetWidth, // Passando a largura em pixels da 1ª carta
+        this.cardTargetHeight // Passando a altura em pixels da 1ª carta
+      )
       
       // Calcular estatísticas
       if (this.pages.length > 0) {
